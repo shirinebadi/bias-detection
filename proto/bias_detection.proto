@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package bias_detection;
+
+service BiasDetection {
+    rpc AnalyzeBias (BiasRequest) returns (BiasResponse) {}
+}
+
+message BiasRequest {
+    string text_content = 1;
+}
+
+message BiasResponse {
+    float bias_score = 1;
+    repeated string biased_phrases = 2;
+}
