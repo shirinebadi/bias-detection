@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: transformer
-        image: shirinebadi/transformer:latest 
+        image: gcr.io/datacenter-437321/transformer:latest
         imagePullPolicy: Always
         env:
         - name: RABBITMQ_HOST
