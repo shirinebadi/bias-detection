@@ -1,8 +1,29 @@
 FROM python:3.12-slim
+
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY transformer.py .
-COPY proto/ proto/
-RUN apt-get update && apt-get install -y ffmpeg
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    portaudio19-dev \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    pika \
+    SpeechRecognition \
+    pydub \
+    grpcio \
+    protobuf \
+    paramiko
+
+# Copy your application code
+COPY proto/ /app/proto/
+COPY transformer.py /app/
+
+# Set Python to run in unbuffered mode
+ENV PYTHONUNBUFFERED=1
+
 CMD ["python", "transformer.py"]

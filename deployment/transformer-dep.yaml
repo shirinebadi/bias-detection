@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transformer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transformer
+  template:
+    metadata:
+      labels:
+        app: transformer
+    spec:
+      containers:
+      - name: transformer
+        image: shirinebadi/transformer:latest 
+        imagePullPolicy: Always
+        env:
+        - name: RABBITMQ_HOST
+          value: "rabbitmq"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: BIAS_SERVICE_HOST
+          value: "bias-worker:50051"
+        - name: SFTP_HOST
+          value: "your-sftp-host"  
+        - name: SFTP_PORT
+          value: "22"
+        - name: SFTP_USERNAME
+          value: "sftpuser" 
+        - name: SFTP_PASSWORD
+          value: "sftpuser" 
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
