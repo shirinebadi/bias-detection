@@ -87,11 +87,3 @@ kubectl apply -f conf/grafana/
 # Deploy AlertManager
 kubectl apply -f conf/alert/
 ```
-
-## Monitoring
-
-The system provides comprehensive monitoring through:
-- Resource usage metrics (CPU, memory, network)
-- Processing pipeline metrics (conversion time, analysis time)
-- Error rates and system health indicators
-- Custom Grafana dashboards for visualization
