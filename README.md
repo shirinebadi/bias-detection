@@ -87,3 +87,13 @@ kubectl apply -f conf/grafana/
 # Deploy AlertManager
 kubectl apply -f conf/alert/
 ```
+
+### Test Request
+
+```
+# Submit a new audio
+curl -X POST http://<front url>/process-audio -H "Content-Type: application/json" -d '{"file_path": "/sftpuser/test-obama.wav"}'
+
+# Get result
+curl -X POST http://<front url>/get_result -H "Content-Type: application/json" -d '{"file_uri": "/sftpuser/test-obama.wav"}'
+```
