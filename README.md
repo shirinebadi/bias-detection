@@ -1,5 +1,5 @@
-#BIAS
-#Bias Detection System
+
+# Bias Detection System
 
 A microservice-based system that analyzes presidential speeches for bias by processing audio files and generating bias scores.
 
