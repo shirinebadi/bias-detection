@@ -42,6 +42,7 @@ Provides two REST endpoints:
 - Kubernetes cluster (for deployment)
 - SFTP server for file storage
 - Access to container registry
+- Slack channel for alerts (Optional)
 
 ## Installation & Deployment
 
@@ -71,27 +72,20 @@ kubectl apply -f deployment/
 ```
 
 4. Setup Monitoring (Optional)
+
+If you want to setup alerts in Slack, you need to create a new webhook and add its url to your cluster
+```
+kubectl create secret generic slack-url --from-literal=slack_url="your-slack-webhook-url" -n monitoring
+```
 ```bash
 # Apply Prometheus configuration
 kubectl apply -f conf/prometheus/
 
 # Deploy Grafana
 kubectl apply -f conf/grafana/
-```
 
-## Directory Structure
-
-```
-.
-├── deployment/          # Kubernetes deployment files
-├── conf/               # Configuration files
-│   ├── prometheus/     # Prometheus configuration
-│   └── grafana/        # Grafana dashboards
-├── src/                # Source code
-│   ├── transformer/    # Speech-to-text service
-│   ├── bias-detector/  # Bias analysis service
-│   └── front-server/   # API gateway
-└── test-data/         # Sample audio files for testing
+# Deploy AlertManager
+kubectl apply -f conf/alert/
 ```
 
 ## Monitoring

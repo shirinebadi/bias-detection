@@ -1,0 +1,60 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: slack-alerts
+  namespace: monitoring
+spec:
+  route:
+    groupBy: ['job']
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 12h
+    receiver: 'slack-notifications'
+  receivers:
+  - name: 'slack-notifications'
+    slackConfigs:
+    - apiURL:
+        key: slack_url
+        name: slack-url
+      channel: '#alerts'
+      title: '{{ template "ALERT" . }}'
+      text: '{{ template " Container {{ $labels.container }} needs recovery." . }}'
+      sendResolved: true
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: bias-service-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+  - name: bias-service
+    rules:
+    - alert: HighMemoryUsage
+      expr: container_memory_usage_bytes{container=~"bias-worker|transformer|frontend"} > 800000000
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High Memory Usage
+        description: Container {{ $labels.container }} memory usage is above 800MB for 5 minutes
+
+    - alert: HighCPUUsage
+      expr: rate(container_cpu_usage_seconds_total{container=~"bias-worker|transformer|frontend"}[5m]) * 100 > 80
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High CPU Usage
+        description: Container {{ $labels.container }} CPU usage is above 80% for 5 minutes
+
+    - alert: PodRestartingFrequently
+      expr: changes(kube_pod_container_status_restarts_total{container=~"bias-worker|transformer|frontend"}[15m]) > 2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: Pod Restarting Frequently
+        description: Pod {{ $labels.pod }} has restarted more than 2 times in 15 minutes

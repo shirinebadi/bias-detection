@@ -1,3 +1,4 @@
+import threading
 from flask import Flask, request, jsonify
 import pika
 import os
@@ -53,34 +54,35 @@ def callback(ch, method, properties, body):
     except Exception as e:
             logger.error(f"Error in Callback - {e}")
 
-def read_from_queue(file_uri):
-        try:
-            rabbitmq_host = os.getenv('RABBITMQ_SERVICE_HOST', 'localhost')
-            logger.info(f"Connecting to RabbitMQ at {rabbitmq_host}")
-            
-            connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host=rabbitmq_host,
-                port=int(os.getenv('RABBITMQ_SERVICE_PORT_AMQP', '5672')),
-                connection_attempts=5,
-                retry_delay=5
-            ))
-            channel = connection.channel()
-            
-            channel.queue_declare(queue='result_queue', durable=False)
-            channel.basic_qos(prefetch_count=1)
-            channel.basic_consume(
-                queue='result_queue',
-                on_message_callback=callback,
-                auto_ack=True
-            )
-            
-            logger.info("Connected to RabbitMQ. Waiting for messages...")
-            channel.start_consuming()
-        except pika.exceptions.AMQPConnectionError as e:
-            logger.error(f"RabbitMQ connection error: {str(e)}")
-            logger.info("Retrying in 5 seconds...")
-            import time
-            time.sleep(5)
+def read_from_queue():
+        while True:
+            try:
+                rabbitmq_host = os.getenv('RABBITMQ_SERVICE_HOST', 'localhost')
+                logger.info(f"Connecting to RabbitMQ at {rabbitmq_host}")
+                
+                connection = pika.BlockingConnection(pika.ConnectionParameters(
+                    host=rabbitmq_host,
+                    port=int(os.getenv('RABBITMQ_SERVICE_PORT_AMQP', '5672')),
+                    connection_attempts=5,
+                    retry_delay=5
+                ))
+                channel = connection.channel()
+                
+                channel.queue_declare(queue='result_queue', durable=False)
+                channel.basic_qos(prefetch_count=1)
+                channel.basic_consume(
+                    queue='result_queue',
+                    on_message_callback=callback,
+                    auto_ack=True
+                )
+                
+                logger.info("Connected to RabbitMQ. Waiting for messages...")
+                channel.start_consuming()
+            except pika.exceptions.AMQPConnectionError as e:
+                logger.error(f"RabbitMQ connection error: {str(e)}")
+                logger.info("Retrying in 5 seconds...")
+                import time
+                time.sleep(5)
 
 
 @app.route('/process-audio', methods=['POST'])
@@ -107,14 +109,8 @@ def get_result():
         file_uri = request.json.get('file_uri')
         if not file_uri:
             return jsonify({'error': 'file_uri is required'}), 400
-        logger.info(f'Received request to process file: {file_uri}')
-        
-        if file_uri in results:
-            return jsonify({'file': file_uri , 'score': results[file_uri]}), 200
-        
-        logger.info("Reading from Result Qeueue")
-        read_from_queue(file_uri)
-        logger.info("Finished Reading, Looking for the file...")
+        logger.info(f'Received request to return score for file: {file_uri}')
+
         
         if file_uri in results:
             return jsonify({'file': file_uri , 'score': results[file_uri]}), 200
@@ -125,5 +121,9 @@ def get_result():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+    queue_thread = threading.Thread(target=read_from_queue)
+    queue_thread.daemon = True 
+    queue_thread.start()
+    
     logger.info("Starting Flask server...")
     app.run(host='0.0.0.0', port=5000)
