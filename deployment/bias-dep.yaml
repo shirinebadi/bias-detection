@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bias-worker
-  labels:
-    app: bias-worker
 spec:
   replicas: 1
   selector:
@@ -13,6 +11,9 @@ spec:
     metadata:
       labels:
         app: bias-worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
     spec:
       containers:
       - name: bias-worker
@@ -20,27 +21,12 @@ spec:
         ports:
         - containerPort: 50051
           name: grpc
-        env:
-        - name: BIAS_SERVICE_HOST
-          value: "bias-worker:50051"
+        - containerPort: 8000
+          name: metrics
         resources:
           requests:
-            memory: "2Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
           limits:
-            memory: "4Gi"
-            cpu: "1000m"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: bias-worker
-spec:
-  selector:
-    app: bias-worker
-  clusterIP: 192.168.241.72
-  ports:
-  - name: grpc
-    port: 50051
-    targetPort: 50051
-    protocol: TCP
+            memory: "1Gi"
+            cpu: "500m"

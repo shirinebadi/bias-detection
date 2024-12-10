@@ -24,7 +24,7 @@ spec:
         - name: BIAS_SERVICE_HOST
           value: "bias-worker:50051"
         - name: SFTP_HOST
-          value: "your-sftp-host"  
+          value: "node.shirine-236196.cdi-PG0.cloudlab.umass.edu"  
         - name: SFTP_PORT
           value: "22"
         - name: SFTP_USERNAME

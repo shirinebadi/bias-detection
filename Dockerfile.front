@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir \
     pika
 
 # Copy application code
-COPY app.py /app/
+COPY front.py /app/
 
 # Expose port
 EXPOSE 5000

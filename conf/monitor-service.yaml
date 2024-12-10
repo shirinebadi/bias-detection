@@ -1,0 +1,32 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: bias-worker-monitor
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: bias-worker
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+  - port: metrics
+    interval: 15s
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bias-worker-metrics
+  labels:
+    app: bias-worker
+spec:
+  selector:
+    app: bias-worker
+  ports:
+  - name: metrics
+    port: 8000
+    targetPort: 8000
+    protocol: TCP

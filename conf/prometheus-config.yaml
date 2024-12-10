@@ -1,0 +1,43 @@
+# First create the storage class
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: prometheus-storage
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-standard
+---
+# Update Prometheus configuration
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus-kube-prometheus-prometheus
+  namespace: monitoring
+spec:
+  serviceMonitorSelector:
+    matchLabels:
+      release: prometheus
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: prometheus-storage
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+# Make sure the service is properly labeled
+apiVersion: v1
+kind: Service
+metadata:
+  name: bias-worker-metrics
+  labels:
+    app: bias-worker
+    release: prometheus
+spec:
+  selector:
+    app: bias-worker
+  ports:
+  - name: metrics
+    port: 8000
+    targetPort: 8000
