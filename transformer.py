@@ -63,6 +63,33 @@ def transcribe_audio(file_path):
         )
         return response.bias_score, response.biased_phrases
 
+def send_to_queue(file_path, score):
+    try:
+        rabbitmq_host = os.getenv('RABBITMQ_HOST', 'localhost')
+        logger.info(f"Connecting to RabbitMQ at {rabbitmq_host}")
+        
+        connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_host))
+        channel = connection.channel()
+        
+        # Declare queue without durability to match existing queue
+        channel.queue_declare(queue='result_queue', durable=False)
+        
+        message = json.dumps({'file_path': file_path, 'score': score})
+        logger.info(f"Publishing message: {message}")
+        
+        channel.basic_publish(
+            exchange='',
+            routing_key='result_queue',
+            body=message
+        )
+        
+        logger.info("Message published successfully")
+        connection.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error publishing to queue: {str(e)}")
+        return False
+
 def callback(ch, method, properties, body):
     try:
         data = json.loads(body)
@@ -80,8 +107,10 @@ def callback(ch, method, properties, body):
         
         if get_file_from_sftp(sftp_host, sftp_port, sftp_username, sftp_password, remote_path, local_path):
             result = transcribe_audio(local_path)
+            send_to_queue(remote_path, result[0])
             logger.info(f"Bias score: {result[0]}")
             logger.info(f"Biased phrases: {result[1]}")
+
         else:
             logger.error(f"Failed to download file from SFTP: {remote_path}")
     except Exception as e:
